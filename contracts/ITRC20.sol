@@ -12,8 +12,4 @@ interface ITRC20 {
     function approve(address spender, uint value) external returns (bool);
 
     function transferFrom(address from, address to, uint value) external returns (bool);
-
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    event Approval(address indexed owner, address indexed spender, uint value);
 }
