@@ -16,6 +16,7 @@ contract SwapTrc10to20 is Ownable {
     ITRC20 public trc20;
 
     uint public rate = 100;
+    bool public ratePositive = false;
     uint public totalSwapTrc20;
 
     mapping(address => uint) private _trc10balance;
@@ -29,13 +30,9 @@ contract SwapTrc10to20 is Ownable {
         trc20 = ITRC20(_trc20);
     }
 
-    /**
-     * @dev Function to set minimum deposit value
-     * @param value The amount of tokens in SOL.
-     * @return A boolean that indicates if the operation was successful.
-     */
-    function setExchangeRate(uint value) public onlyOwner returns (bool) {
+    function setExchangeRate(uint value, bool positive) public onlyOwner returns (bool) {
         rate = value;
+        ratePositive = positive;
 
         return true;
     }
@@ -75,19 +72,50 @@ contract SwapTrc10to20 is Ownable {
         _trc10balance[msg.sender] = _trc10balance[msg.sender].sub(_balanceBefore);
         _trc20balance[msg.sender] = _trc20balance[msg.sender].add(_balanceAfter);
         totalSwapTrc20.add(_balanceAfter);
-        trc20.approve(msg.sender, _balanceAfter);
+        //trc20.approve(msg.sender, _balanceAfter);
 
         return true;
     }
 
-    function withdrawTrc20() public returns(bool) {
-        uint _amount = trc20.allowance(address(this), msg.sender);
-        require(uint(trc20.allowance(address(this), msg.sender)) >= _amount, "Balance not approved.");
 
-        return trc20.transferFrom(address(this), msg.sender, _amount);
+    function withdrawTrc20() public returns(bool) {
+        uint _amount = _trc20balance[msg.sender];
+        _trc20balance[msg.sender] = 0;
+        
+        require(_amount > 0, "Zero balance");
+
+        return trc20.transfer(msg.sender, _amount);
+    }
+    
+    /*
+     * @dev Withdraw basic ERC10 token to owner
+     */ 
+    function WDRL_Erc10ToOwner() public onlyOwner {
+        return address(uint160(owner())).transferToken(getTRC10ContractBalance(), trc10id);
+    }
+    
+    /*
+     * @dev Withdraw any ERC10 token to owner
+     */ 
+    function WDRL_AnyErc10AnyToOwner(trcToken id) public onlyOwner {
+        return address(uint160(owner())).transferToken(getTRC10ContractBalance(), id);
+    }
+        
+    /*
+     * @dev Withdraw any ERC20 token to owner, except basic ERC20 token
+     */ 
+    function WDRL_Erc20ToOwner(ITRC20 token) public onlyOwner returns (bool) {
+        if (address(token) == address(trc20)) {
+            revert('Owner cannot withdraw the basic erc20 contract.');
+        }
+        return token.transfer(address(uint160(owner())), getTRC20ContractBalance());
     }
 
+
     function _withRate(uint amount) private view returns(uint) {
-        return amount.mul(100).div(rate);
+        if (ratePositive) {
+            return amount.mul(rate);
+        }
+        return amount.div(rate);
     }
 }
