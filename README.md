@@ -1,4 +1,4 @@
-# Swap TRC10 to TRC20 token
+# 💱 Swap TRC10 to TRC20 token
 One way swap of TRC10 to TRC20 token.
 
 Before swap you need set exchange rate via "setExchangeRate()", by default rate is 100.
