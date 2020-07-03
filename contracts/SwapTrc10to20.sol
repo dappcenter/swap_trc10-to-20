@@ -9,7 +9,7 @@ import "./Ownable.sol";
  * Author: Paul Pironmind | pironmind@gmail.com
  * Licence: MIT
  */
-contract SwapTrc10to20 is Ownable, ITRC20 {
+contract SwapTrc10to20 is Ownable {
     using SafeMath for uint;
 
     trcToken public trc10id;
