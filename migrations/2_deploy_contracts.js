@@ -1,9 +1,19 @@
+const TronWeb = require('tronweb');
+
+const config = require('../tronbox');
+const { getNetwork } = require('../tronbox');
+
 const SwapTrc10to20 = artifacts.require("./SwapTrc10to20.sol");
 
-const TronWeb = require('tronweb');
-const tronWeb = new TronWeb({fullHost: 'http://127.0.0.1:9090'});
-const trc10tokenId = 1999999;
-const trc20tokenAddress = 'TReoAJuMHbVFjiLbq4r2eoi5kKWxUhS3sX';
+let network = getNetwork();
+const tronWeb = new TronWeb({
+  fullHost: config.networks[network].fullHost,
+  fullNode: config.networks[network].fullHost,
+  solidityNode: config.networks[network].fullHost,
+  privateKey: config.networks[network].privateKey
+});
+const trc10tokenId = config.networks[network].trc10TokenId;
+const trc20tokenAddress = config.networks[network].trc20TokenAddress;
 
 module.exports = function(deployer) {
   deployer.deploy(SwapTrc10to20, trc10tokenId, tronWeb.address.toHex(trc20tokenAddress));

@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "node-env-file": "^0.1.8",
     "tronweb": "^2.10.1"
   }
 }
