@@ -1,5 +1,6 @@
 pragma solidity ^0.5.8;
 
+import "./Address.sol";
 import "./SafeMath.sol";
 import "./ITRC20.sol";
 import "./Ownable.sol";
@@ -10,9 +11,10 @@ import "./Ownable.sol";
  * Licence: MIT
  */
 contract SwapTrc10to20 is Ownable {
+    using Address for address;
     using SafeMath for uint;
 
-    trcToken public trc10id;
+    uint public trc10id;
     ITRC20 public trc20;
 
     uint8 trc10decimal;
@@ -20,12 +22,9 @@ contract SwapTrc10to20 is Ownable {
 
     uint public rate = 1;
     bool public ratePositive = false;
-    uint public totalSwapTrc20;
 
     mapping(address => uint) private _trc10balance;
     mapping(address => uint) private _trc20balance;
-    
-    uint private _trc20UnpdPool;
 
     constructor(
         uint _trc10,
@@ -40,21 +39,6 @@ contract SwapTrc10to20 is Ownable {
         trc20 = ITRC20(_trc20);
         trc10decimal = _trc10dec;
         trc20decimal = _trc20dec;
-    }
-    
-    function howMuchToDeposit() public view onlyOwner returns (uint) {
-        uint cBal = getTRC20ContractBalance();
-        uint tPoolBal = trc20UnpaidPool();
-        
-        if (cBal >= tPoolBal) {
-            return 0;
-        }
-        
-        return tPoolBal.sub(cBal);
-    }
-    
-    function trc20UnpaidPool() public view returns (uint) {
-        return uint(_trc20UnpdPool);
     }
 
     function getTRC10Balance(address who) public view returns (uint) {
@@ -79,7 +63,7 @@ contract SwapTrc10to20 is Ownable {
         trcToken id = msg.tokenid;
         uint256 value = msg.tokenvalue;
 
-        require(id == trc10id, 'Not valid token');
+        require(uint(id) == trc10id, "Not valid token");
 
         _trc10balance[msg.sender] = _trc10balance[msg.sender].add(value);
 
@@ -101,56 +85,51 @@ contract SwapTrc10to20 is Ownable {
 
         _trc20balance[msg.sender] = _trc20balance[msg.sender].add(_balanceAfter);
 
-        totalSwapTrc20.add(_balanceAfter);
-        _trc20UnpdPool.add(_balanceAfter);
-
         return true;
     }
 
     function withdrawTrc20() public returns(bool) {
         require(
             trc20.balanceOf(address(this)) >= _trc20balance[msg.sender] &&
-            trc20.balanceOf(address(this)) > 0, 
+            trc20.balanceOf(address(this)) > 0,
             "Not enough balance on contract."
         );
-        
-        uint _amount = _trc20balance[msg.sender];
-        _trc20balance[msg.sender] = 0;
-        
-        require(_amount > 0, "User has withdraw zero balance.");
-        
-        _trc20balance[msg.sender] = 0;
-        _trc20UnpdPool.sub(_amount, "Not enough trc20 balance on contract.");
 
-        return trc20.transfer(msg.sender, _amount);
+        uint _amount = _trc20balance[msg.sender];
+        _trc20balance[msg.sender] =  _trc20balance[msg.sender].sub(_amount);
+        _trc20balance[msg.sender] = 0;
+
+        require(_amount > 0, "User has withdraw zero balance.");
+
+        return trc20.transfer(Address.toPayable(msg.sender), _amount);
     }
-    
+
     function setExchangeRate(uint value, bool positive) public onlyOwner returns (bool) {
         rate = value;
         ratePositive = positive;
 
         return true;
     }
-    
+
     /*
      * @dev Withdraw basic TRC10 token to owner
-     */ 
+     */
     function WDRL_Trc10ToOwner() public onlyOwner {
-        return address(uint160(owner())).transferToken(getTRC10ContractBalance(), trc10id);
+        return Address.toPayable(owner()).transferToken(getTRC10ContractBalance(), uint(trc10id));
     }
-    
+
     /*
      * @dev Withdraw any TRC10 token to owner
-     */ 
-    function WDRL_AnyTrc10AnyToOwner(trcToken id) public onlyOwner {
-        return address(uint160(owner())).transferToken(getTRC10ContractBalance(), id);
+     */
+    function WDRL_AnyTrc10AnyToOwner(uint id) public onlyOwner {
+        return Address.toPayable(owner()).transferToken(getTRC10ContractBalance(), uint(id));
     }
-        
+
     /*
      * @dev Withdraw any ERC20 token to owner
-     */ 
+     */
     function WDRL_AnyTrc20ToOwner(ITRC20 token) public onlyOwner returns (bool) {
-        return token.transfer(address(uint160(owner())), getTRC20ContractBalance());
+        return token.transfer(Address.toPayable(owner()), getTRC20ContractBalance());
     }
 
     function _withRate(uint amount) private view returns(uint) {
