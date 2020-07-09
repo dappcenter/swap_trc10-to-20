@@ -14,7 +14,9 @@ const tronWeb = new TronWeb({
 });
 const trc10tokenId = config.networks[network].trc10TokenId;
 const trc20tokenAddress = config.networks[network].trc20TokenAddress;
+const trc10decimal = process.env.TRC10_DECIMAL || 0;
+const trc20decimal = process.env.TRC20_DECIMAL || 6;
 
 module.exports = function(deployer) {
-  deployer.deploy(SwapTrc10to20, trc10tokenId, tronWeb.address.toHex(trc20tokenAddress));
+  deployer.deploy(SwapTrc10to20, trc10tokenId, tronWeb.address.toHex(trc20tokenAddress), trc10decimal, trc20decimal);
 };
