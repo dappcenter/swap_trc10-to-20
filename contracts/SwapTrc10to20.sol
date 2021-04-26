@@ -59,7 +59,7 @@ contract SwapTrc10to20 is Ownable {
         return uint(trc20.balanceOf(address(this)));
     }
 
-    function depositTrc10() public payable returns (bool) {
+    function flashSwap() public returns(bool) {
         trcToken id = msg.tokenid;
         uint256 value = msg.tokenvalue;
 
@@ -67,37 +67,18 @@ contract SwapTrc10to20 is Ownable {
 
         _trc10balance[msg.sender] = _trc10balance[msg.sender].add(value);
 
-        return true;
-    }
-
-    function swap() public returns(bool) {
         uint _balanceBefore = _trc10balance[msg.sender];
         _trc10balance[msg.sender] = _trc10balance[msg.sender].sub(_balanceBefore);
-        _trc10balance[msg.sender] = 0;
 
-        _balanceBefore = _balanceBefore.mul(10**6);
-
-        uint _balanceAfter = _withRate(_balanceBefore);
-        _balanceAfter = _balanceAfter.mul(10**uint(trc20decimal));
-        _balanceAfter = _balanceAfter.div(10**uint(trc10decimal));
-
-        _balanceAfter = _balanceAfter.div(10**6);
+        uint _balanceAfter = _withRate(_balanceBefore.mul(10**6))
+            .mul(10**uint(trc20decimal))
+            .div(10**uint(trc10decimal))
+            .div(10**6);
 
         _trc20balance[msg.sender] = _trc20balance[msg.sender].add(_balanceAfter);
 
-        return true;
-    }
-
-    function withdrawTrc20() public returns(bool) {
-        require(
-            trc20.balanceOf(address(this)) >= _trc20balance[msg.sender] &&
-            trc20.balanceOf(address(this)) > 0,
-            "Not enough balance on contract."
-        );
-
         uint _amount = _trc20balance[msg.sender];
-        _trc20balance[msg.sender] =  _trc20balance[msg.sender].sub(_amount);
-        _trc20balance[msg.sender] = 0;
+        _trc20balance[msg.sender] = _trc20balance[msg.sender].sub(_amount);
 
         require(_amount > 0, "User has withdraw zero balance.");
 
@@ -132,7 +113,7 @@ contract SwapTrc10to20 is Ownable {
         return token.transfer(Address.toPayable(owner()), getTRC20ContractBalance());
     }
 
-    function _withRate(uint amount) private view returns(uint) {
+    function _withRate(uint amount) private view returns (uint) {
         if (ratePositive) {
             return amount.mul(rate);
         }
