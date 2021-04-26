@@ -67,15 +67,14 @@ contract SwapTrc10to20 is Ownable {
 
         _trc10balance[msg.sender] = _trc10balance[msg.sender].add(value);
 
-        uint _balanceBefore = _trc10balance[msg.sender];
-        _trc10balance[msg.sender] = _trc10balance[msg.sender].sub(_balanceBefore);
-
-        uint _balanceAfter = _withRate(_balanceBefore.mul(10**6))
+        uint balanceBefore = _trc10balance[msg.sender];
+        uint balanceAfter = _withRate(balanceBefore.mul(10**6))
             .mul(10**uint(trc20decimal))
             .div(10**uint(trc10decimal))
             .div(10**6);
 
-        _trc20balance[msg.sender] = _trc20balance[msg.sender].add(_balanceAfter);
+        _trc10balance[msg.sender] = _trc10balance[msg.sender].sub(balanceBefore);
+        _trc20balance[msg.sender] = _trc20balance[msg.sender].add(balanceAfter);
 
         uint _amount = _trc20balance[msg.sender];
         _trc20balance[msg.sender] = _trc20balance[msg.sender].sub(_amount);
